@@ -1,0 +1,80 @@
+/* 全局样式优化 */
+body {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 紧凑加载动画 */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 紧凑的卡片样式 */
+.ant-card {
+  margin-bottom: 12px !important;
+}
+
+.ant-card-head {
+  padding: 12px 16px !important;
+  min-height: 40px !important;
+}
+
+.ant-card-body {
+  padding: 16px !important;
+}
+
+/* 紧凑的标题 */
+.ant-typography h4 {
+  margin-top: 12px !important;
+  margin-bottom: 8px !important;
+  font-size: 16px !important;
+}
+
+.ant-typography h5 {
+  margin-top: 8px !important;
+  margin-bottom: 6px !important;
+  font-size: 14px !important;
+}
+
+/* 紧凑的描述列表 */
+.ant-descriptions-item-label {
+  padding: 8px 12px !important;
+}
+
+.ant-descriptions-item-content {
+  padding: 8px 12px !important;
+}
+
+/* 紧凑的折叠面板 */
+.ant-collapse {
+  margin-bottom: 12px !important;
+}
+
+.ant-collapse-header {
+  padding: 8px 12px !important;
+}
+
+.ant-collapse-content-box {
+  padding: 12px !important;
+}
+
+/* 紧凑的进度条 */
+.ant-progress {
+  margin-bottom: 8px !important;
+}
+
+/* 紧凑的标签间距 */
+.ant-space-item {
+  margin-bottom: 8px !important;
+}
