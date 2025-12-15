@@ -3,13 +3,23 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { performAssessment } from './controllers/assessmentController.js';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { performAssessment, exportPDF, exportWord } from './controllers/assessmentController.js';
+import dataRoutes from './routes/dataRoutes.js';
+import { testConnection } from './config/database.js';
+import dotenv from 'dotenv';
+
+// 加载环境变量
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
 
 // 配置文件上传
 const storage = multer.diskStorage({
@@ -25,13 +35,20 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['application/pdf', 'application/msword',
-                          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                          'text/plain'];
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/bmp'
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('不支持的文件格式，请上传PDF、Word或TXT文件'));
+      cb(new Error('不支持的文件格式，请上传PDF、Word、TXT或图片文件（JPG/PNG/BMP）'));
     }
   },
   limits: {
@@ -70,8 +87,107 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '路之音智能人才评估系统运行中' });
 });
 
+// PDF导出
+import { generatePDFReport } from './services/pdfExportService.js';
+import { jobTemplates, searchTemplates, getCategories } from './data/jobTemplates.js';
+
+// 岗位模板API
+app.get('/api/job-templates', (req, res) => {
+  try {
+    const { keyword, category } = req.query;
+    let templates = jobTemplates;
+
+    if (keyword) {
+      templates = searchTemplates(keyword);
+    }
+
+    if (category) {
+      templates = templates.filter(t => t.category === category);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        templates,
+        categories: getCategories()
+      }
+    });
+  } catch (error) {
+    console.error('获取模板失败:', error);
+    res.status(500).json({ error: '获取模板失败' });
+  }
+});
+
+// 获取单个模板
+app.get('/api/job-templates/:id', (req, res) => {
+  try {
+    const template = jobTemplates.find(t => t.id === req.params.id);
+    if (!template) {
+      return res.status(404).json({ error: '模板不存在' });
+    }
+    res.json({ success: true, data: template });
+  } catch (error) {
+    console.error('获取模板失败:', error);
+    res.status(500).json({ error: '获取模板失败' });
+  }
+});
+
+// 导出PDF
+app.post('/api/export-pdf', express.json(), exportPDF);
+
+// 导出Word
+app.post('/api/export-word', express.json(), exportWord);
+
+// 数据库相关API路由
+app.use('/api/data', dataRoutes);
+
+// WebSocket连接管理
+const clients = new Map();
+
+wss.on('connection', (ws, req) => {
+  const clientId = Date.now() + Math.random();
+  clients.set(clientId, ws);
+  console.log(`✅ WebSocket客户端连接: ${clientId}`);
+
+  ws.on('close', () => {
+    clients.delete(clientId);
+    console.log(`❌ WebSocket客户端断开: ${clientId}`);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`WebSocket错误:`, error);
+  });
+
+  // 发送欢迎消息
+  ws.send(JSON.stringify({
+    type: 'connected',
+    clientId,
+    message: '已连接到评估服务器'
+  }));
+});
+
+// 导出广播函数供Controller使用
+export function broadcastProgress(data) {
+  clients.forEach((ws) => {
+    if (ws.readyState === 1) { // OPEN
+      ws.send(JSON.stringify(data));
+    }
+  });
+}
+
 // 启动服务器
-app.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`🚀 后端服务已启动: http://localhost:${PORT}`);
   console.log(`📊 API端点: http://localhost:${PORT}/api/assess`);
+  console.log(`🔌 WebSocket端点: ws://localhost:${PORT}`);
+  console.log(`💾 数据库API: http://localhost:${PORT}/api/data`);
+
+  // 测试数据库连接
+  console.log('\n📡 正在连接数据库...');
+  const dbConnected = await testConnection();
+  if (dbConnected) {
+    console.log('✅ 数据库连接成功，系统已就绪!\n');
+  } else {
+    console.log('⚠️ 数据库连接失败，请检查配置或启动 Docker 容器:\n   docker-compose up -d\n');
+  }
 });

@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: talent_assessment_db
+    restart: always
+    environment:
+      POSTGRES_USER: talent_user
+      POSTGRES_PASSWORD: talent_password_2024
+      POSTGRES_DB: talent_assessment
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=zh_CN.UTF-8 --lc-ctype=zh_CN.UTF-8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - talent_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talent_user -d talent_assessment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: talent_assessment_backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=talent_assessment
+      - DB_USER=talent_user
+      - DB_PASSWORD=talent_password_2024
+      - DB_POOL_MIN=2
+      - DB_POOL_MAX=10
+      - CORS_ORIGIN=http://localhost:3000
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/src:/app/src
+    networks:
+      - talent_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: talent_assessment_frontend
+    restart: always
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - talent_network
+    depends_on:
+      - backend
+
+  # pgAdmin 数据库管理工具
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: talent_assessment_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@talent.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - talent_network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  talent_network:
+    driver: bridge

@@ -1,7 +1,63 @@
-/* 全局样式优化 */
+/* 全局样式优化 + 星空背景 */
 body {
   font-size: 14px;
   line-height: 1.5;
+  background: linear-gradient(to bottom, #0a0e27 0%, #1a1e3e 50%, #0f1729 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 星空背景层 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+    radial-gradient(2px 2px at 60px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 50px 50px, #ddd, transparent),
+    radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 90px 10px, #eee, transparent),
+    radial-gradient(1px 1px at 20px 120px, #ddd, transparent),
+    radial-gradient(1px 1px at 110px 150px, #fff, transparent),
+    radial-gradient(2px 2px at 160px 90px, #fff, transparent),
+    radial-gradient(1px 1px at 180px 40px, #eee, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars-move 120s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+@keyframes stars-move {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+/* 主内容区域高透明背景 */
+.ant-layout {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ant-layout-header {
+  background: rgba(26, 30, 62, 0.75) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ant-layout-content {
+  background: transparent !important;
 }
 
 /* 紧凑加载动画 */
@@ -20,18 +76,35 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* 紧凑的卡片样式 */
+/* 紧凑的卡片样式 + 高透明毛玻璃效果 */
 .ant-card {
   margin-bottom: 12px !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
 }
 
 .ant-card-head {
   padding: 12px 16px !important;
   min-height: 40px !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
 
 .ant-card-body {
   padding: 16px !important;
+}
+
+.ant-card-small > .ant-card-head {
+  padding: 10px 14px !important;
+  min-height: 36px !important;
+  font-size: 14px !important;
+}
+
+.ant-card-small > .ant-card-body {
+  padding: 12px !important;
 }
 
 /* 紧凑的标题 */
@@ -50,10 +123,20 @@ body {
 /* 紧凑的描述列表 */
 .ant-descriptions-item-label {
   padding: 8px 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-descriptions-item-content {
   padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+
+.ant-descriptions-small .ant-descriptions-item-label {
+  padding: 6px 10px !important;
+}
+
+.ant-descriptions-small .ant-descriptions-item-content {
+  padding: 6px 10px !important;
 }
 
 /* 紧凑的折叠面板 */
@@ -63,6 +146,7 @@ body {
 
 .ant-collapse-header {
   padding: 8px 12px !important;
+  font-size: 14px !important;
 }
 
 .ant-collapse-content-box {
@@ -71,10 +155,237 @@ body {
 
 /* 紧凑的进度条 */
 .ant-progress {
-  margin-bottom: 8px !important;
+  margin-bottom: 6px !important;
+}
+
+.ant-progress-small {
+  margin-bottom: 4px !important;
 }
 
 /* 紧凑的标签间距 */
 .ant-space-item {
+  margin-bottom: 6px !important;
+}
+
+.ant-space-small .ant-space-item {
+  margin-bottom: 4px !important;
+}
+
+/* 紧凑的表格 */
+.ant-table {
+  font-size: 13px !important;
+}
+
+.ant-table-thead > tr > th {
+  padding: 10px 12px !important;
+}
+
+.ant-table-tbody > tr > td {
+  padding: 10px 12px !important;
+}
+
+/* 紧凑的标签 */
+.ant-tag {
+  margin: 2px 4px 2px 0 !important;
+  font-size: 13px !important;
+}
+
+/* 紧凑的段落 */
+.ant-typography {
   margin-bottom: 8px !important;
 }
+
+.ant-typography p {
+  margin-bottom: 8px !important;
+}
+
+/* 紧凑的表单 */
+.ant-form-item {
+  margin-bottom: 16px !important;
+}
+
+.ant-form-item-label {
+  padding-bottom: 4px !important;
+}
+
+/* 紧凑的上传组件 */
+.ant-upload-drag {
+  padding: 16px !important;
+}
+
+.ant-upload-drag-icon {
+  margin-bottom: 8px !important;
+}
+
+.ant-upload-text {
+  font-size: 14px !important;
+  margin-bottom: 4px !important;
+}
+
+.ant-upload-hint {
+  font-size: 12px !important;
+}
+
+/* 紧凑的步骤条 */
+.ant-steps {
+  margin-bottom: 20px !important;
+}
+
+/* 紧凑的标签页 */
+.ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+
+/* 模态框透明效果 */
+.ant-modal-content {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(15px);
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.ant-modal-header {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 表格透明效果 */
+.ant-table {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 8px;
+}
+
+.ant-table-thead > tr > th {
+  background: rgba(24, 144, 255, 0.1) !important;
+  backdrop-filter: blur(8px);
+}
+
+.ant-table-tbody > tr {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.08) !important;
+}
+
+/* 描述列表透明效果 */
+.ant-descriptions-view {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-radius: 6px;
+}
+
+.ant-descriptions-item-label {
+  background: rgba(250, 250, 250, 0.6) !important;
+}
+
+/* 步骤条优化 */
+.ant-steps {
+  background: rgba(255, 255, 255, 0.6) !important;
+  padding: 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+/* 表单输入框透明 */
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(217, 217, 217, 0.6) !important;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-selector:focus,
+.ant-picker:focus {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(24, 144, 255, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1) !important;
+}
+
+/* 上传区域透明 */
+.ant-upload-drag {
+  background: rgba(250, 250, 250, 0.7) !important;
+  border: 1px dashed rgba(217, 217, 217, 0.8) !important;
+  backdrop-filter: blur(8px);
+}
+
+.ant-upload-drag:hover {
+  border-color: rgba(24, 144, 255, 0.8) !important;
+}
+
+/* 折叠面板透明 */
+.ant-collapse {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(217, 217, 217, 0.5) !important;
+  backdrop-filter: blur(10px);
+}
+
+.ant-collapse-header {
+  background: rgba(250, 250, 250, 0.6) !important;
+}
+
+.ant-collapse-content {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 引导页动画效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.ant-modal-content {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* 引导页步骤点 */
+.ant-steps-item-icon {
+  transition: all 0.3s ease;
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* 引导页Modal内的Card更紧凑 */
+.ant-modal .ant-card-small > .ant-card-body {
+  padding: 6px 8px !important;
+}
+
+/* 引导页Steps更紧凑 */
+.ant-modal .ant-steps-vertical .ant-steps-item-content {
+  min-height: 32px !important;
+}
+
+.ant-modal .ant-steps-item-description {
+  font-size: 12px !important;
+}
+
+.ant-modal .ant-steps-item-title {
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+}
+
+/* 引导页Modal内的Paragraph更紧凑 */
+.ant-modal .ant-typography p {
+  margin-bottom: 6px !important;
+}
+

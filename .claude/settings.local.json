@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command:*)",
+      "Bash(npm start)",
+      "Bash(npm run dev:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx eslint:*)",
+      "Bash(node --version:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run build:*)",
+      "Bash(taskkill:*)",
+      "Bash(Stop-Process -Name node -Force 2)",
+      "Bash($null)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(.restart.bat)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(nul)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(if not exist .env copy .env.example .env)",
+      "Bash(powershell \"Stop-Process -Name node -Force 2>&1 | Out-Null\")",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(powershell \"Start-Sleep -Seconds 5\")",
+      "Bash(powershell \"Start-Sleep -Seconds 8\")",
+      "Bash(powershell \"Start-Sleep -Seconds 30\")",
+      "Bash(timeout /t 20 /nobreak:*)",
+      "Bash(start /B npm start)",
+      "Bash(docker exec:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
