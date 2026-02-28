@@ -93,7 +93,7 @@ ENV NODE_ENV=production
 # npm ci: 使用 package-lock.json 精确安装，速度快且可复现
 # --only=production: 只安装 dependencies，不装 devDependencies
 # npm cache clean --force: 清理 npm 缓存，减小镜像体积
-RUN npm ci --only=production --legacy-peer-deps && \
+RUN npm install --only=production --legacy-peer-deps && \
     npm cache clean --force
 
 # -----------------------------------------------------------------------------
