@@ -18,122 +18,67 @@ function InputForm({ onSubmit, loading }) {
   const [jobHistory, setJobHistory] = useState([]);
   const [companyBackgroundId, setCompanyBackgroundId] = useState(null);
 
-  // 从数据库加载岗位历史
+  // 从数据库加载岗位历史（数据库不可用时静默失败）
   const loadJobHistory = async () => {
-    console.log('=== 📖 开始加载岗位历史 ===');
-    console.log('   时间:', new Date().toLocaleString());
-
+    console.log('[InputForm] loadJobHistory: 开始加载岗位历史');
     try {
-      console.log('📡 调用API: getJobPositionHistory(20)');
       const jobs = await getJobPositionHistory(20);
-      console.log('✅ API返回数据:', jobs);
-      console.log('   数据类型:', Array.isArray(jobs) ? 'Array' : typeof jobs);
-      console.log('   数据长度:', jobs?.length);
-
-      if (jobs && jobs.length > 0) {
-        console.log('   第一条数据示例:', JSON.stringify(jobs[0], null, 2));
-      }
-
-      // 转换为前端需要的格式
-      const formattedJobs = jobs.map(job => ({
+      console.log('[InputForm] loadJobHistory: 加载成功，数量:', jobs?.length ?? 0);
+      const formattedJobs = (jobs || []).map(job => ({
         id: job.id.toString(),
         name: job.job_title,
         description: job.job_description,
         createdAt: job.created_at
       }));
-
       setJobHistory(formattedJobs);
-      console.log('📊 格式化后岗位数量:', formattedJobs.length);
-      console.log('=== ✅ 岗位历史加载完成 ===');
     } catch (error) {
-      console.error('=== ❌ 加载岗位历史失败 ===');
-      console.error('   错误类型:', error.name);
-      console.error('   错误消息:', error.message);
-      console.error('   错误堆栈:', error.stack);
-      message.error('加载岗位历史失败');
+      // 数据库不可用时不报错，历史岗位功能降级为不可用
+      console.warn('[InputForm] loadJobHistory: 加载失败（数据库未连接），历史岗位功能不可用。错误:', error.message);
       setJobHistory([]);
     }
   };
 
-  // 初始化:加载公司背景和岗位历史
+  // 初始化：尝试从数据库加载公司背景和岗位历史
   useEffect(() => {
-    console.log('=== 🔄 InputForm组件初始化 ===');
-    console.log('   挂载时间:', new Date().toLocaleString());
+    console.log('[InputForm] useEffect: 组件挂载，开始初始化');
 
-    // 从数据库加载公司背景
     const loadCompanyBackground = async () => {
-      console.log('📖 开始加载公司背景...');
+      console.log('[InputForm] loadCompanyBackground: 尝试从数据库加载公司背景');
       try {
-        console.log('📡 调用API: getActiveCompanyBackground()');
         const background = await getActiveCompanyBackground();
-        console.log('📦 API返回结果:', background);
-
-        if (background) {
-          console.log('   背景ID:', background.id);
-          console.log('   内容长度:', background.content?.length);
-          console.log('   内容预览:', background.content?.substring(0, 50) + '...');
-
+        if (background?.content) {
           form.setFieldsValue({ companyBackground: background.content });
           setCompanyBackgroundId(background.id);
-          console.log('✅ 公司背景已填充到表单');
+          console.log('[InputForm] loadCompanyBackground: 已从数据库填充公司背景，ID:', background.id);
         } else {
-          console.log('⚠️ 数据库中没有公司背景');
+          console.log('[InputForm] loadCompanyBackground: 数据库中无公司背景记录');
         }
       } catch (error) {
-        console.error('❌ 加载公司背景失败:', error);
-        console.error('   错误详情:', error.message);
+        console.warn('[InputForm] loadCompanyBackground: 加载失败（数据库未连接），跳过自动填充。错误:', error.message);
       }
     };
 
-    console.log('📌 开始并行加载公司背景和岗位历史...');
     loadCompanyBackground();
     loadJobHistory();
-    console.log('=== ✅ 初始化加载任务已启动 ===');
   }, [form]);
 
-  // 监听组件显示时重新加载岗位历史
+  // 监听页面可见性变化时重新加载岗位历史
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('📱 页面重新可见,重新加载岗位历史');
+        console.log('[InputForm] visibilitychange: 页面重新可见，刷新岗位历史');
         loadJobHistory();
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-
-  // 保存公司背景到数据库
-  const handleCompanyBackgroundChange = async (e) => {
-    const value = e.target.value;
-    console.log('📝 公司背景输入变化, 长度:', value.length);
-    console.log('   内容预览:', value.substring(0, 50) + (value.length > 50 ? '...' : ''));
-
-    try {
-      console.log('💾 开始保存公司背景到数据库...');
-      const saved = await saveCompanyBackground(value);
-      console.log('📦 数据库返回结果:', saved);
-
-      if (saved) {
-        setCompanyBackgroundId(saved.id);
-        console.log('✅ 公司背景已保存到数据库, ID:', saved.id);
-      } else {
-        console.warn('⚠️ 保存返回结果为空');
-      }
-    } catch (error) {
-      console.error('❌ 保存公司背景失败:', error);
-      console.error('   错误详情:', error.message);
-      console.error('   错误响应:', error.response?.data);
-    }
-  };
 
   // 选择历史岗位
   const handleJobSelect = (value) => {
     const selectedJob = jobHistory.find(job => job.id === value);
     if (selectedJob) {
+      console.log('[InputForm] handleJobSelect: 选择历史岗位:', selectedJob.name);
       form.setFieldsValue({
         jobTitle: selectedJob.name,
         jobDescription: selectedJob.description
@@ -142,48 +87,47 @@ function InputForm({ onSubmit, loading }) {
     }
   };
 
-  // 提交表单
+  // 提交表单 —— 唯一触发 API 调用的入口
   const handleFinish = async (values) => {
-    console.log('=== 🚀 开始提交表单 ===');
-    console.log('📋 表单所有字段值:', JSON.stringify(values, null, 2));
-    console.log('📝 岗位名称 (jobTitle):', values.jobTitle);
-    console.log('📄 岗位描述 (jobDescription):', values.jobDescription?.substring(0, 100) + '...');
-    console.log('🏢 公司背景 (companyBackground):', values.companyBackground?.substring(0, 100) + '...');
-    console.log('📎 简历文件 (resumes):', values.resumes);
-    console.log('🆔 当前公司背景ID:', companyBackgroundId);
+    console.log('[InputForm] handleFinish: 用户点击"开始智能评估"，开始提交');
+    console.log('[InputForm] handleFinish: 公司背景长度:', values.companyBackground?.length);
+    console.log('[InputForm] handleFinish: 岗位名称:', values.jobTitle);
+    console.log('[InputForm] handleFinish: 岗位JD长度:', values.jobDescription?.length);
+    console.log('[InputForm] handleFinish: 简历文件数量:', values.resumes?.length);
 
     const jobTitle = values.jobTitle;
     const jobDesc = values.jobDescription;
+    const companyBg = values.companyBackground;
 
-    console.log('🔍 校验: jobTitle存在?', !!jobTitle, '| jobDesc存在?', !!jobDesc);
-
-    // 保存岗位到数据库
-    if (jobTitle && jobDesc) {
+    // 尝试保存公司背景到数据库（可选，失败不阻断评估）
+    if (companyBg) {
       try {
-        console.log('💾 准备保存岗位到数据库...');
-        console.log('   - 岗位名称:', jobTitle);
-        console.log('   - 公司背景ID:', companyBackgroundId);
-        await createOrUpdateJobPosition(jobTitle, jobDesc, companyBackgroundId);
-        console.log('✅ 岗位已成功保存到数据库');
-
-        // 重新加载岗位历史
-        console.log('🔄 重新加载岗位历史...');
-        await loadJobHistory();
-        message.success('岗位信息已保存');
+        console.log('[InputForm] handleFinish: 尝试保存公司背景到数据库...');
+        const saved = await saveCompanyBackground(companyBg);
+        if (saved?.id) {
+          setCompanyBackgroundId(saved.id);
+          console.log('[InputForm] handleFinish: 公司背景保存成功，ID:', saved.id);
+        }
       } catch (error) {
-        console.error('❌ 保存岗位失败:', error);
-        console.error('   错误详情:', error.message);
-        console.error('   错误堆栈:', error.stack);
-        message.error('保存岗位失败');
+        console.warn('[InputForm] handleFinish: 公司背景保存失败（数据库未连接），不影响评估。错误:', error.message);
       }
-    } else {
-      console.warn('⚠️ 跳过保存岗位: jobTitle或jobDesc为空');
     }
 
-    // 调用原有的提交逻辑
-    console.log('📤 调用父组件的onSubmit函数...');
+    // 尝试保存岗位到数据库（可选，失败不阻断评估）
+    if (jobTitle && jobDesc) {
+      try {
+        console.log('[InputForm] handleFinish: 尝试保存岗位到数据库，岗位名称:', jobTitle);
+        await createOrUpdateJobPosition(jobTitle, jobDesc, companyBackgroundId);
+        console.log('[InputForm] handleFinish: 岗位保存成功');
+        await loadJobHistory();
+      } catch (error) {
+        console.warn('[InputForm] handleFinish: 岗位保存失败（数据库未连接），不影响评估。错误:', error.message);
+      }
+    }
+
+    // 调用父组件的评估逻辑（核心流程）
+    console.log('[InputForm] handleFinish: 开始调用评估接口 /api/assess');
     onSubmit(values);
-    console.log('=== ✅ 表单提交完成 ===');
   };
 
   const uploadProps = {
@@ -217,7 +161,6 @@ function InputForm({ onSubmit, loading }) {
             <TextArea
               rows={3}
               placeholder="请输入公司业务领域、发展阶段、团队文化、技术栈等信息&#x0a;&#x0a;例如：&#x0a;我们是一家专注于人工智能技术的创业公司，目前处于快速发展期。团队规模50人，技术团队占比60%。主要业务方向是智能对话系统和知识图谱。技术栈包括Python、React、PostgreSQL等。团队氛围开放创新，鼓励技术分享和自主学习。"
-              onChange={handleCompanyBackgroundChange}
             />
           </Form.Item>
 
@@ -241,13 +184,9 @@ function InputForm({ onSubmit, loading }) {
                 placeholder="历史岗位"
                 style={{ width: 160 }}
                 onChange={handleJobSelect}
-                onFocus={() => {
-                  console.log('🖱️ Select获得焦点,重新加载岗位历史');
-                  loadJobHistory();
-                }}
                 onDropdownVisibleChange={(open) => {
                   if (open) {
-                    console.log('📂 下拉菜单打开,重新加载岗位历史');
+                    console.log('[InputForm] Select: 下拉菜单打开，刷新岗位历史');
                     loadJobHistory();
                   }
                 }}

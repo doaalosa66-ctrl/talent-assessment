@@ -30,7 +30,7 @@ export async function generatePDFReport(reportData, outputPath) {
       doc.font('MicrosoftYaHei')
         .fontSize(24)
         .fillColor('#1890ff')
-        .text('路之音智能人才评估报告', { align: 'center' });
+        .text('智能人才评估报告', { align: 'center' });
 
       doc.moveDown(0.5);
       doc.font('MicrosoftYaHei')

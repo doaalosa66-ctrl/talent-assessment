@@ -1,7 +1,7 @@
 {
   "name": "talent-assessment-system",
   "version": "1.0.0",
-  "description": "路之音智能人才评估与面试决策系统",
+  "description": "智能人才评估与面试决策系统",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",

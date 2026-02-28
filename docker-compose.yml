@@ -7,9 +7,9 @@ services:
     container_name: talent_assessment_db
     restart: always
     environment:
-      POSTGRES_USER: talent_user
-      POSTGRES_PASSWORD: talent_password_2024
-      POSTGRES_DB: talent_assessment
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=zh_CN.UTF-8 --lc-ctype=zh_CN.UTF-8"
     ports:
       - "5433:5432"
@@ -29,25 +29,30 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: production
     container_name: talent_assessment_backend
     restart: always
     environment:
-      - NODE_ENV=production
-      - PORT=3001
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3001}
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=talent_assessment
-      - DB_USER=talent_user
-      - DB_PASSWORD=talent_password_2024
-      - DB_POOL_MIN=2
-      - DB_POOL_MAX=10
-      - CORS_ORIGIN=http://localhost:3000
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_POOL_MIN=${DB_POOL_MIN:-2}
+      - DB_POOL_MAX=${DB_POOL_MAX:-10}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     ports:
       - "3001:3001"
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/src:/app/src
+      - backend_node_modules:/app/node_modules
     networks:
       - talent_network
     depends_on:
@@ -79,8 +84,8 @@ services:
     container_name: talent_assessment_pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@talent.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@talent.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "5050:80"
@@ -95,6 +100,8 @@ volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  backend_node_modules:
     driver: local
 
 networks:

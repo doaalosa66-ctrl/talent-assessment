@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Card, Steps, message, Modal, Table, Button, Space, Progress } from 'antd';
-import { HistoryOutlined, EyeOutlined, DeleteOutlined, FileWordOutlined, QuestionCircleOutlined, HomeOutlined } from '@ant-design/icons';
+import { HistoryOutlined, EyeOutlined, DeleteOutlined, FileWordOutlined, QuestionCircleOutlined, HomeOutlined, LogoutOutlined } from '@ant-design/icons';
 import InputForm from './components/InputForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import WelcomeGuide from './components/WelcomeGuide';
+import Login from './components/Login';
+import Register from './components/Register';
 import axios from 'axios';
 import './App.css';
 
@@ -11,6 +13,9 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [assessmentResult, setAssessmentResult] = useState(null);
@@ -21,14 +26,35 @@ function App() {
   const [ws, setWs] = useState(null);
   const [guideVisible, setGuideVisible] = useState(false);
 
-  // 检查是否首次访问,显示引导页
+  // 检查登录状态
   useEffect(() => {
-    const hasVisited = localStorage.getItem('hasVisitedBefore');
-    if (!hasVisited) {
-      setGuideVisible(true);
-      localStorage.setItem('hasVisitedBefore', 'true');
+    const savedUser = localStorage.getItem('userInfo');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setUserInfo(user);
+        setIsLoggedIn(true);
+        // 恢复axios Authorization header
+        if (user.token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+        }
+      } catch (error) {
+        console.error('解析用户信息失败:', error);
+        localStorage.removeItem('userInfo');
+      }
     }
   }, []);
+
+  // 检查是否首次访问,显示引导页
+  useEffect(() => {
+    if (isLoggedIn) {
+      const hasVisited = localStorage.getItem('hasVisitedBefore');
+      if (!hasVisited) {
+        setGuideVisible(true);
+        localStorage.setItem('hasVisitedBefore', 'true');
+      }
+    }
+  }, [isLoggedIn]);
 
   // 从localStorage加载历史记录
   useEffect(() => {
@@ -73,7 +99,11 @@ function App() {
 
   // WebSocket连接
   useEffect(() => {
-    const websocket = new WebSocket('ws://localhost:3001');
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = window.location.hostname;
+    const wsPort = import.meta.env.VITE_WS_PORT || '3001';
+    const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}`;
+    const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
       console.log('✅ WebSocket连接成功');
@@ -150,9 +180,11 @@ function App() {
       });
 
       // 发送请求（设置超时时间为5分钟，因为AI分析需要较长时间）
+      const token = userInfo?.token;
       const response = await axios.post('/api/assess', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         timeout: 300000, // 5分钟超时（300秒）
       });
@@ -256,6 +288,53 @@ function App() {
     }
   };
 
+  // 处理登录成功
+  const handleLoginSuccess = (user) => {
+    setUserInfo(user);
+    setIsLoggedIn(true);
+    setShowRegister(false);
+    localStorage.setItem('userInfo', JSON.stringify(user));
+    // 设置axios默认Authorization header
+    if (user.token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+    }
+  };
+
+  // 处理注册成功
+  const handleRegisterSuccess = () => {
+    message.success('注册成功！请登录');
+    setShowRegister(false);
+  };
+
+  // 切换到注册页面
+  const handleShowRegister = () => {
+    setShowRegister(true);
+  };
+
+  // 切换到登录页面
+  const handleShowLogin = () => {
+    setShowRegister(false);
+  };
+
+  // 处理登出
+  const handleLogout = () => {
+    Modal.confirm({
+      title: '确认登出',
+      content: '确定要退出登录吗？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        setIsLoggedIn(false);
+        setUserInfo(null);
+        setCurrentStep(0);
+        setAssessmentResult(null);
+        localStorage.removeItem('userInfo');
+        delete axios.defaults.headers.common['Authorization'];
+        message.success('已退出登录');
+      }
+    });
+  };
+
   // 删除历史记录
   const deleteHistoryReport = (id) => {
     Modal.confirm({
@@ -327,6 +406,24 @@ function App() {
     { title: '查看报告', description: '完整评估结果' },
   ];
 
+  // 如果未登录,显示登录或注册页面
+  if (!isLoggedIn) {
+    if (showRegister) {
+      return (
+        <Register
+          onRegisterSuccess={handleRegisterSuccess}
+          onBackToLogin={handleShowLogin}
+        />
+      );
+    }
+    return (
+      <Login
+        onLoginSuccess={handleLoginSuccess}
+        onRegister={handleShowRegister}
+      />
+    );
+  }
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 系统引导页 */}
@@ -337,9 +434,14 @@ function App() {
 
       <Header style={{ background: '#fff', padding: '0 40px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={2} style={{ margin: '12px 0', color: '#1890ff' }}>
-          路之音智能人才评估与面试决策系统
+          智能人才评估与面试决策系统
         </Title>
         <Space size="middle">
+          {userInfo && (
+            <span style={{ color: '#666', fontSize: 14 }}>
+              欢迎, {userInfo.username}
+            </span>
+          )}
           <Button
             icon={<QuestionCircleOutlined />}
             onClick={() => setGuideVisible(true)}
@@ -353,6 +455,14 @@ function App() {
             size="large"
           >
             报告历史 ({reportHistory.length})
+          </Button>
+          <Button
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            size="large"
+            danger
+          >
+            退出登录
           </Button>
         </Space>
       </Header>

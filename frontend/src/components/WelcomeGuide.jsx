@@ -18,12 +18,12 @@ const WelcomeGuide = ({ visible, onClose }) => {
 
   const guideSteps = [
     {
-      title: '欢迎使用路之音智能人才评估系统',
+      title: '欢迎使用智能人才评估系统',
       icon: <RocketOutlined style={{ fontSize: 32, color: '#1890ff' }} />,
       content: (
         <div style={{ textAlign: 'center', padding: '6px 0' }}>
           <Title level={3} style={{ color: '#1890ff', marginTop: 4, marginBottom: 8, fontSize: 18 }}>
-            🎯 路之音智能人才评估系统
+            🎯 智能人才评估系统
           </Title>
           <Paragraph style={{ fontSize: 14, marginTop: 8, marginBottom: 6 }}>
             基于AI大模型的智能招聘解决方案
@@ -296,7 +296,7 @@ const WelcomeGuide = ({ visible, onClose }) => {
       footer={null}
       width={680}
       centered
-      bodyStyle={{ padding: '20px 28px 16px' }}
+      styles={{ body: { padding: '20px 28px 16px' } }}
       closeIcon={<span style={{ fontSize: 16 }}>✕</span>}
     >
       <div style={{ textAlign: 'center', marginBottom: 12 }}>

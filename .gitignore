@@ -21,6 +21,17 @@ build/
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment - 所有 .env 文件都不提交
 .env
 .env.local
+.env.test
+.env.prod
+.env.*.local
+
+# 用户数据文件（不提交到代码库）
+backend/users.json
+backend/claude_accounts.json
+
+# 临时文件
+nul
+nul.baiduyun.uploading.cfg

@@ -26,7 +26,7 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   console.error('❌ 数据库连接错误:', err);
-  process.exit(-1);
+  // 不退出进程，允许系统在无数据库时继续运行核心评估功能
 });
 
 // 测试数据库连接

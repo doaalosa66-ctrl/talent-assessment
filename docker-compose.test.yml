@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库 (测试环境)
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: talent_assessment_db_test
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=zh_CN.UTF-8 --lc-ctype=zh_CN.UTF-8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - talent_network_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务 (测试环境)
+  backend_test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: talent_assessment_backend_test
+    restart: always
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${PORT:-3101}
+      - DB_HOST=postgres_test
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_POOL_MIN=${DB_POOL_MIN:-2}
+      - DB_POOL_MAX=${DB_POOL_MAX:-10}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3100}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+    ports:
+      - "3101:3001"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/src:/app/src
+      - backend_node_modules_test:/app/node_modules
+    networks:
+      - talent_network_test
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+
+  # 前端服务 (测试环境)
+  frontend_test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: talent_assessment_frontend_test
+    restart: always
+    environment:
+      - VITE_API_URL=http://localhost:3101
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - talent_network_test
+    depends_on:
+      - backend_test
+
+  # pgAdmin 数据库管理工具 (测试环境)
+  pgadmin_test:
+    image: dpage/pgadmin4:latest
+    container_name: talent_assessment_pgadmin_test
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@talent.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5051:80"
+    volumes:
+      - pgadmin_data_test:/var/lib/pgadmin
+    networks:
+      - talent_network_test
+    depends_on:
+      - postgres_test
+
+volumes:
+  postgres_data_test:
+    driver: local
+  pgadmin_data_test:
+    driver: local
+  backend_node_modules_test:
+    driver: local
+
+networks:
+  talent_network_test:
+    driver: bridge

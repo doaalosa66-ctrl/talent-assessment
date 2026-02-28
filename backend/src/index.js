@@ -7,11 +7,17 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { performAssessment, exportPDF, exportWord } from './controllers/assessmentController.js';
 import dataRoutes from './routes/dataRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import claudeChatRoutes from './routes/claudeChatRoutes.js';
 import { testConnection } from './config/database.js';
+import { authMiddleware } from './middleware/auth.js';
+import { authLimiter, assessmentLimiter, apiLimiter } from './middleware/rateLimit.js';
 import dotenv from 'dotenv';
+import { dirname, join } from 'path';
 
-// 加载环境变量
-dotenv.config();
+// 加载环境变量 - 确保从项目根目录加载
+const __dirname_root = dirname(dirname(fileURLToPath(import.meta.url)));
+dotenv.config({ path: join(__dirname_root, '.env') });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,7 +63,13 @@ const upload = multer({
 });
 
 // 中间件
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+app.use(cors({
+  origin: corsOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -68,7 +80,7 @@ if (!fs.existsSync('uploads')) {
 }
 
 // 路由
-app.post('/api/assess', upload.array('resumes', 20), async (req, res) => {
+app.post('/api/assess', authMiddleware, assessmentLimiter, upload.array('resumes', 20), async (req, res) => {
   try {
     // 将文件信息和表单数据合并
     req.body.resumeFiles = req.files;
@@ -84,7 +96,7 @@ app.post('/api/assess', upload.array('resumes', 20), async (req, res) => {
 
 // 健康检查
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: '路之音智能人才评估系统运行中' });
+  res.json({ status: 'ok', message: '智能人才评估系统运行中' });
 });
 
 // PDF导出
@@ -138,8 +150,12 @@ app.post('/api/export-pdf', express.json(), exportPDF);
 // 导出Word
 app.post('/api/export-word', express.json(), exportWord);
 
-// 数据库相关API路由
-app.use('/api/data', dataRoutes);
+// 数据库相关API路由（需要认证）
+app.use('/api/data', authMiddleware, dataRoutes);
+// 认证路由（带速率限制，不需要认证）
+app.use('/api/auth', authLimiter, authRoutes);
+// Claude 聊天代理（需要认证）
+app.use('/api/claude', authMiddleware, claudeChatRoutes);
 
 // WebSocket连接管理
 const clients = new Map();

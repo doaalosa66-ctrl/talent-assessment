@@ -58,6 +58,7 @@ export async function performAssessment(req, res) {
             return {
               success: true,
               data: resumeData.structured_data,
+              rawText: resumeData.raw_text,
               filename: file.originalname
             };
           } catch (error) {
@@ -146,7 +147,7 @@ export async function performAssessment(req, res) {
         }
 
         // 使用快速综合评估（一次AI调用完成所有分析）
-        const result = await quickComprehensiveAssessment(jobAnalysis, candidateData);
+        const result = await quickComprehensiveAssessment(jobAnalysis, candidateData, candidateResult.rawText);
 
         // 更新进度
         completedCandidates++;
@@ -363,7 +364,7 @@ function generateHTMLReport(reportData) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>路之音智能人才评估报告</title>
+  <title>智能人才评估报告</title>
   <style>
     body { font-family: "微软雅黑", Arial, sans-serif; line-height: 1.6; padding: 40px; }
     h1 { color: #1890ff; text-align: center; border-bottom: 3px solid #1890ff; padding-bottom: 10px; }
@@ -380,7 +381,7 @@ function generateHTMLReport(reportData) {
   </style>
 </head>
 <body>
-  <h1>路之音智能人才评估报告</h1>
+  <h1>智能人才评估报告</h1>
   <p style="text-align: center; color: #666;">生成时间: ${new Date().toLocaleString('zh-CN')}</p>
 
   <h2>一、岗位能力分析</h2>

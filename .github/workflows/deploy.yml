@@ -1,0 +1,37 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              echo "🚀 部署到生产环境..."
+              cd /var/www/talent-assessment-prod
+              git pull origin main
+              cp /root/envs/.env.prod .env
+              docker-compose down
+              docker-compose up -d --build
+              echo "✅ 生产环境部署完成"
+
+            elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+              echo "🧪 部署到测试环境..."
+              cd /var/www/talent-assessment-test
+              git pull origin dev
+              cp /root/envs/.env.test .env
+              docker-compose -f docker-compose.test.yml --env-file .env down
+              docker-compose -f docker-compose.test.yml --env-file .env up -d --build
+              echo "✅ 测试环境部署完成"
+            fi

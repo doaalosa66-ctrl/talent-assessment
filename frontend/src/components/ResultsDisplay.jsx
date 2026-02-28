@@ -82,19 +82,22 @@ function ResultsDisplay({ data, onReset }) {
       <Card title="📊 岗位能力分析报告">
         <Title level={4}>核心能力维度与权重分配</Title>
         {competenciesWithWeights.length > 0 ? (
-          <Collapse
-            defaultActiveKey={[competenciesWithWeights[0]?.name]}
-            items={competenciesWithWeights.map((comp, index) => ({
-              key: comp.name,
-              label: (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {competenciesWithWeights.map((comp, index) => (
+              <div key={comp.name} style={{
+                padding: '12px 16px',
+                background: '#f8f9fa',
+                borderRadius: 8,
+                borderLeft: '3px solid #1677ff'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <Text strong>{comp.name}</Text>
-                  <Tag color="blue" style={{ marginLeft: 8 }}>{comp.weight}%</Tag>
+                  <Tag color="blue">{comp.weight}%</Tag>
                 </div>
-              ),
-              children: <Paragraph style={{ marginBottom: 0 }}>{comp.description}</Paragraph>
-            }))}
-          />
+                <Text type="secondary" style={{ fontSize: 13 }}>{comp.description}</Text>
+              </div>
+            ))}
+          </Space>
         ) : (
           <div style={{ padding: '20px 0', textAlign: 'center', color: '#999' }}>
             暂无能力维度数据
@@ -299,6 +302,88 @@ function ResultsDisplay({ data, onReset }) {
               <Card title="能力雷达图" size="small" style={{ marginTop: 8 }}>
                 <RadarChart data={candidate.assessment.assessment} />
               </Card>
+
+              {/* 文化契合度子指标 */}
+              {candidate.assessment.assessment?.cultural_fit_detail && (
+                <Card title="🤝 文化契合度详情" size="small" style={{ marginTop: 8 }}>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      文化契合度由3个有简历证据支撑的子指标合成，避免主观猜测
+                    </Text>
+                  </div>
+                  {[
+                    {
+                      key: 'collaboration_score',
+                      label: '协作信号',
+                      desc: '跨团队协作、带人、mentor经历',
+                      evidenceKey: 'collaboration_evidence',
+                      weight: '40%',
+                      color: '#1677ff'
+                    },
+                    {
+                      key: 'ownership_score',
+                      label: '主人翁信号',
+                      desc: '主动推动改进、从0到1主导、提出方案',
+                      evidenceKey: 'ownership_evidence',
+                      weight: '40%',
+                      color: '#52c41a'
+                    },
+                    {
+                      key: 'communication_score',
+                      label: '沟通信号',
+                      desc: '对外汇报、客户沟通、技术分享',
+                      evidenceKey: 'communication_evidence',
+                      weight: '20%',
+                      color: '#fa8c16'
+                    }
+                  ].map(item => {
+                    const detail = candidate.assessment.assessment.cultural_fit_detail;
+                    const score = detail[item.key] ?? 50;
+                    const evidence = detail[item.evidenceKey] || [];
+                    return (
+                      <div key={item.key} style={{
+                        padding: '10px 14px',
+                        marginBottom: 8,
+                        background: '#fafafa',
+                        borderRadius: 6,
+                        borderLeft: `3px solid ${item.color}`
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <Space size={6}>
+                            <Text strong style={{ fontSize: 13 }}>{item.label}</Text>
+                            <Tag color="default" style={{ fontSize: 11 }}>权重 {item.weight}</Tag>
+                          </Space>
+                          <Text strong style={{
+                            fontSize: 16,
+                            color: score >= 75 ? '#52c41a' : score >= 55 ? '#faad14' : '#ff4d4f'
+                          }}>{score}</Text>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>{item.desc}</Text>
+                        {evidence.length > 0 ? (
+                          <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                            {evidence.map((e, i) => (
+                              <Text key={i} style={{ fontSize: 12 }}>
+                                <CheckCircleOutlined style={{ color: item.color, marginRight: 4 }} />
+                                {safeString(e)}
+                              </Text>
+                            ))}
+                          </Space>
+                        ) : (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            <WarningOutlined style={{ marginRight: 4 }} />
+                            简历中未找到明确证据，给予中间分 50
+                          </Text>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div style={{ textAlign: 'right', marginTop: 4 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      合成分 = 协作×40% + 主人翁×40% + 沟通×20% = <Text strong>{candidate.assessment.assessment.cultural_fit}</Text>
+                    </Text>
+                  </div>
+                </Card>
+              )}
 
               {/* 核心优势 */}
               <Card title="✅ 核心优势分析" size="small" style={{ marginTop: 8 }}>
